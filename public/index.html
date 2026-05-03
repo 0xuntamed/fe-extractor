@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Interface Auditor</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="workspace">
+        <aside class="control-panel" aria-label="Analyzer controls">
+          <div class="brand-block">
+            <p class="eyebrow">Interface Auditor</p>
+            <h1>Paste a frontend project. Get a design-system audit.</h1>
+            <p class="intro">
+              Analyze a public repo or live site to find the colors, fonts, UI libraries, and repeated component patterns already hiding in the frontend.
+            </p>
+          </div>
+
+          <form id="analyze-form" class="analyze-form">
+            <label for="source-url">Source URL</label>
+            <div class="input-row">
+              <input
+                id="source-url"
+                name="url"
+                type="url"
+                autocomplete="url"
+                placeholder="https://github.com/tailwindlabs/headlessui"
+                required
+              />
+              <button class="primary-button" type="submit">Audit</button>
+            </div>
+
+            <fieldset class="mode-picker">
+              <legend>Mode</legend>
+              <label>
+                <input type="radio" name="mode" value="auto" checked />
+                Auto
+              </label>
+              <label>
+                <input type="radio" name="mode" value="repo" />
+                Repo
+              </label>
+              <label>
+                <input type="radio" name="mode" value="live" />
+                Live
+              </label>
+            </fieldset>
+          </form>
+
+          <div class="samples">
+            <p>Samples</p>
+            <button type="button" id="demo-button">Analyze demo</button>
+            <button type="button" data-sample="https://github.com/tailwindlabs/headlessui">Try GitHub repo</button>
+            <button type="button" data-sample="https://nextjs.org">Try live site</button>
+          </div>
+        </aside>
+
+        <section class="report" aria-live="polite">
+          <div id="empty-state" class="empty-state">
+            <p class="eyebrow">Ready for audit</p>
+            <h2>Turn an unfamiliar frontend into a readable design inventory.</h2>
+            <p>
+              The report highlights palette candidates, typography, libraries, component families, and confidence notes in one focused workspace.
+            </p>
+            <button class="secondary-button" type="button" id="empty-demo-button">Run demo audit</button>
+          </div>
+
+          <div id="loading-state" class="loading-state hidden">
+            <div class="loader" aria-hidden="true"></div>
+            <p>Reading frontend signals...</p>
+          </div>
+
+          <div id="error-state" class="error-state hidden"></div>
+
+          <article id="snapshot" class="snapshot hidden">
+            <header class="snapshot-header">
+              <div>
+                <p id="snapshot-mode" class="eyebrow"></p>
+                <h2 id="snapshot-title"></h2>
+                <p id="snapshot-meta"></p>
+              </div>
+              <div class="action-row">
+                <button id="export-md" class="secondary-button" type="button">Export design.md</button>
+                <button id="export-json" class="secondary-button" type="button">Export JSON</button>
+              </div>
+            </header>
+
+            <section class="audit-overview" aria-label="Audit score">
+              <div class="score-tile">
+                <span id="overall-score">0</span>
+                <p>Audit score</p>
+              </div>
+              <div class="health-grid" id="health-grid"></div>
+            </section>
+
+            <section class="metric-grid" id="metrics"></section>
+
+            <section class="section-band">
+              <div class="section-heading">
+                <p class="eyebrow">Palette</p>
+                <h3>Detected palette</h3>
+              </div>
+              <div id="colors" class="color-groups"></div>
+            </section>
+
+            <section class="two-column">
+              <div class="section-band">
+                <div class="section-heading">
+                  <p class="eyebrow">Typography</p>
+                  <h3>Font inventory</h3>
+                </div>
+                <div id="fonts" class="pill-list"></div>
+              </div>
+
+              <div class="section-band">
+                <div class="section-heading">
+                  <p class="eyebrow">Stack</p>
+                  <h3>Detected libraries</h3>
+                </div>
+                <div id="libraries" class="pill-list"></div>
+              </div>
+            </section>
+
+            <section class="section-band">
+              <div class="section-heading">
+                <p class="eyebrow">Components</p>
+                <h3>Component families</h3>
+              </div>
+              <div id="components" class="component-grid"></div>
+            </section>
+
+            <section class="two-column">
+              <div class="section-band">
+                <div class="section-heading">
+                  <p class="eyebrow">Surfaces</p>
+                  <h3>Radii and shadows</h3>
+                </div>
+                <div id="surface-tokens" class="token-list"></div>
+              </div>
+
+              <div class="section-band">
+                <div class="section-heading">
+                  <p class="eyebrow">Spacing</p>
+                  <h3>Layout rhythm</h3>
+                </div>
+                <div id="spacing" class="token-list"></div>
+              </div>
+            </section>
+
+            <section id="warnings-section" class="section-band warnings hidden">
+              <div class="section-heading">
+                <p class="eyebrow">Confidence</p>
+                <h3>Audit notes</h3>
+              </div>
+              <ul id="warnings"></ul>
+            </section>
+          </article>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

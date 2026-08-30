@@ -87,14 +87,6 @@
               </div>
             </header>
 
-            <section class="audit-overview" aria-label="Audit score">
-              <div class="score-tile">
-                <span id="overall-score">0</span>
-                <p>Audit score</p>
-              </div>
-              <div class="health-grid" id="health-grid"></div>
-            </section>
-
             <section class="metric-grid" id="metrics"></section>
 
             <section class="section-band">
@@ -131,21 +123,29 @@
               <div id="components" class="component-grid"></div>
             </section>
 
+            <section class="section-band">
+              <div class="section-heading">
+                <p class="eyebrow">Surfaces</p>
+                <h3>Curves &amp; corner radii</h3>
+              </div>
+              <div id="radii" class="preview-grid"></div>
+            </section>
+
             <section class="two-column">
               <div class="section-band">
                 <div class="section-heading">
-                  <p class="eyebrow">Surfaces</p>
-                  <h3>Radii and shadows</h3>
+                  <p class="eyebrow">Elevation</p>
+                  <h3>Shadows</h3>
                 </div>
-                <div id="surface-tokens" class="token-list"></div>
+                <div id="shadows" class="preview-grid"></div>
               </div>
 
               <div class="section-band">
                 <div class="section-heading">
                   <p class="eyebrow">Spacing</p>
-                  <h3>Layout rhythm</h3>
+                  <h3>Spacing &amp; button padding</h3>
                 </div>
-                <div id="spacing" class="token-list"></div>
+                <div id="spacing" class="spacing-list"></div>
               </div>
             </section>
 

@@ -126,20 +126,68 @@ function colorForSwatch(value) {
   return "linear-gradient(135deg, #f3f4f0, #d8e3dc)";
 }
 
-function ensureHealth(snapshot) {
-  if (snapshot.health) return snapshot.health;
+const RADIUS_SCALE = {
+  "": "4px",
+  none: "0px",
+  sm: "2px",
+  md: "6px",
+  lg: "8px",
+  xl: "12px",
+  "2xl": "16px",
+  "3xl": "24px",
+  full: "9999px"
+};
 
-  const tokenCoverage = Math.min(100, Math.round(((snapshot.colors?.length || 0) + (snapshot.fonts?.length || 0) * 2 + (snapshot.spacing?.length || 0)) * 4));
-  const componentCount =
-    (snapshot.components?.buttons?.length || 0) +
-    (snapshot.components?.inputs?.length || 0) +
-    (snapshot.components?.cards?.length || 0);
-  const componentCoverage = Math.min(100, componentCount * 18);
-  const librarySignals = Math.min(100, (snapshot.libraries?.length || 0) * 22);
-  const warningCount = snapshot.warnings?.length || 0;
-  const overallScore = Math.max(12, Math.round(tokenCoverage * 0.42 + componentCoverage * 0.38 + librarySignals * 0.2 - warningCount * 7));
+const SHADOW_SCALE = {
+  "": "0 1px 3px rgba(16, 24, 40, 0.12)",
+  none: "none",
+  sm: "0 1px 2px rgba(16, 24, 40, 0.06)",
+  md: "0 4px 6px rgba(16, 24, 40, 0.12)",
+  lg: "0 10px 15px rgba(16, 24, 40, 0.14)",
+  xl: "0 20px 25px rgba(16, 24, 40, 0.16)",
+  "2xl": "0 25px 50px rgba(16, 24, 40, 0.25)",
+  inner: "inset 0 2px 4px rgba(16, 24, 40, 0.08)"
+};
 
-  return { overallScore, tokenCoverage, componentCoverage, librarySignals, warningCount };
+const SPACING_UNIT = 4; // Tailwind: a step of 1 equals 0.25rem (4px).
+
+function cssLengthToPx(value) {
+  const match = String(value).trim().match(/([\d.]+)\s*(px|rem|em)?/i);
+  if (!match) return 0;
+  const amount = parseFloat(match[1]);
+  const unit = (match[2] || "px").toLowerCase();
+  return unit === "rem" || unit === "em" ? amount * 16 : amount;
+}
+
+function radiusToCss(value) {
+  const raw = String(value).trim();
+  if (/^rounded/i.test(raw)) {
+    const size = raw.toLowerCase().split("-").pop();
+    const arbitrary = size.match(/\[(.+)\]/);
+    if (arbitrary) return arbitrary[1];
+    if (size === "rounded") return RADIUS_SCALE[""];
+    return RADIUS_SCALE[size] ?? RADIUS_SCALE[""];
+  }
+  return /\d/.test(raw) ? raw : "8px";
+}
+
+function shadowToCss(value) {
+  const raw = String(value).trim();
+  if (/^shadow/i.test(raw)) {
+    const last = raw.toLowerCase().split("-").pop();
+    const size = last === "shadow" ? "" : last;
+    return SHADOW_SCALE[size] ?? SHADOW_SCALE[""];
+  }
+  return raw || "none";
+}
+
+function spacingToPx(value) {
+  const raw = String(value).trim().toLowerCase();
+  const arbitrary = raw.match(/\[(.+?)\]/);
+  if (arbitrary) return cssLengthToPx(arbitrary[1]);
+  const token = raw.match(/-(px|\d+(?:\.\d+)?)$/);
+  if (token) return token[1] === "px" ? 1 : parseFloat(token[1]) * SPACING_UNIT;
+  return cssLengthToPx(raw);
 }
 
 function ensureColorGroups(snapshot) {
@@ -156,13 +204,6 @@ function renderList(items, fallback = "No clear signal detected.") {
   if (!items?.length) return `<span class="pill">${fallback}</span>`;
   return items
     .map((item) => `<span class="pill">${escapeHtml(item.value)} | ${item.count}</span>`)
-    .join("");
-}
-
-function renderTokenList(items, fallback = "No repeated token detected.") {
-  if (!items?.length) return `<span class="token-row">${fallback}</span>`;
-  return items
-    .map((item) => `<span class="token-row"><strong>${escapeHtml(item.value)}</strong><span>${item.count}</span></span>`)
     .join("");
 }
 
@@ -194,24 +235,13 @@ function renderColorGroup(title, items, fallback) {
 function renderSnapshot(snapshot) {
   currentSnapshot = {
     ...snapshot,
-    health: ensureHealth(snapshot),
     colorGroups: ensureColorGroups(snapshot)
   };
 
-  const { health, colorGroups } = currentSnapshot;
+  const { colorGroups } = currentSnapshot;
   document.querySelector("#snapshot-mode").textContent = `${currentSnapshot.mode} analysis | ${currentSnapshot.confidence} confidence`;
   document.querySelector("#snapshot-title").textContent = currentSnapshot.source.displayName || currentSnapshot.source.inputUrl;
   document.querySelector("#snapshot-meta").textContent = `${currentSnapshot.summary.filesScanned} source files or documents scanned`;
-  document.querySelector("#overall-score").textContent = health.overallScore;
-
-  document.querySelector("#health-grid").innerHTML = [
-    ["Token coverage", health.tokenCoverage],
-    ["Component coverage", health.componentCoverage],
-    ["Library signals", health.librarySignals],
-    ["Audit notes", health.warningCount]
-  ]
-    .map(([label, value]) => `<div class="health-item"><strong>${value}</strong><span>${label}</span></div>`)
-    .join("");
 
   document.querySelector("#metrics").innerHTML = [
     ["Colors", currentSnapshot.summary.colors],
@@ -251,12 +281,9 @@ function renderSnapshot(snapshot) {
         .join("")
     : `<span class="pill">No common component families detected.</span>`;
 
-  document.querySelector("#surface-tokens").innerHTML = [
-    ...renderTokenItems(currentSnapshot.radii, "Radius"),
-    ...renderTokenItems(currentSnapshot.shadows, "Shadow")
-  ].join("") || `<span class="token-row">No surface tokens detected.</span>`;
-
-  document.querySelector("#spacing").innerHTML = renderTokenList(currentSnapshot.spacing);
+  document.querySelector("#radii").innerHTML = renderRadii(currentSnapshot.radii);
+  document.querySelector("#shadows").innerHTML = renderShadows(currentSnapshot.shadows);
+  document.querySelector("#spacing").innerHTML = renderSpacing(currentSnapshot.spacing);
 
   const warningsSection = document.querySelector("#warnings-section");
   const warnings = document.querySelector("#warnings");
@@ -266,10 +293,51 @@ function renderSnapshot(snapshot) {
   showState("snapshot");
 }
 
-function renderTokenItems(items, label) {
-  return (items || []).map(
-    (item) => `<span class="token-row"><strong>${label}: ${escapeHtml(item.value)}</strong><span>${item.count}</span></span>`
-  );
+function renderRadii(items) {
+  if (!items?.length) return `<span class="pill">No corner radii detected.</span>`;
+  return items
+    .map(
+      (item) => `
+        <div class="preview-card">
+          <div class="radius-demo" style="border-radius: ${escapeHtml(radiusToCss(item.value))}"></div>
+          <strong>${escapeHtml(item.value)}</strong>
+          <span>${item.count}× used</span>
+        </div>
+      `
+    )
+    .join("");
+}
+
+function renderShadows(items) {
+  if (!items?.length) return `<span class="pill">No shadows detected.</span>`;
+  return items
+    .map(
+      (item) => `
+        <div class="preview-card">
+          <div class="shadow-demo" style="box-shadow: ${escapeHtml(shadowToCss(item.value))}"></div>
+          <strong>${escapeHtml(item.value)}</strong>
+          <span>${item.count}× used</span>
+        </div>
+      `
+    )
+    .join("");
+}
+
+function renderSpacing(items) {
+  if (!items?.length) return `<span class="pill">No spacing scale detected.</span>`;
+  const max = Math.max(...items.map((item) => spacingToPx(item.value)), 1);
+  return items
+    .map((item) => {
+      const width = Math.max(6, Math.round((spacingToPx(item.value) / max) * 100));
+      return `
+        <div class="spacing-row">
+          <strong class="spacing-label">${escapeHtml(item.value)}</strong>
+          <div class="spacing-bar"><span style="width: ${width}%"></span></div>
+          <span class="spacing-count">${item.count}×</span>
+        </div>
+      `;
+    })
+    .join("");
 }
 
 async function analyze(url, mode) {
@@ -314,7 +382,6 @@ function componentMarkdown(items, fallback) {
 }
 
 function generateDesignMarkdown(snapshot) {
-  const health = ensureHealth(snapshot);
   const colorGroups = ensureColorGroups(snapshot);
 
   return `# Interface Audit: ${snapshot.source.displayName || snapshot.source.inputUrl}
@@ -323,13 +390,6 @@ Source: ${snapshot.source.inputUrl}
 Mode: ${snapshot.mode}
 Confidence: ${snapshot.confidence}
 Generated: ${snapshot.analyzedAt}
-
-## Audit Summary
-- Overall score: ${health.overallScore}
-- Token coverage: ${health.tokenCoverage}
-- Component coverage: ${health.componentCoverage}
-- Library signals: ${health.librarySignals}
-- Audit notes: ${health.warningCount}
 
 ## Detected Palette
 ### Brand candidates

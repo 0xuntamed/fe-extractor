@@ -285,11 +285,6 @@ function renderSnapshot(snapshot) {
   document.querySelector("#shadows").innerHTML = renderShadows(currentSnapshot.shadows);
   document.querySelector("#spacing").innerHTML = renderSpacing(currentSnapshot.spacing);
 
-  const warningsSection = document.querySelector("#warnings-section");
-  const warnings = document.querySelector("#warnings");
-  warningsSection.classList.toggle("hidden", !currentSnapshot.warnings.length);
-  warnings.innerHTML = currentSnapshot.warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join("");
-
   showState("snapshot");
 }
 
@@ -422,9 +417,6 @@ ${listMarkdown(snapshot.spacing, "No spacing scale detected.")}
 
 ## Radii and Shadows
 ${listMarkdown([...(snapshot.radii || []), ...(snapshot.shadows || [])], "No surface tokens detected.")}
-
-## Audit Notes
-${snapshot.warnings?.length ? snapshot.warnings.map((warning) => `- ${warning}`).join("\n") : "- No warnings."}
 `;
 }
 

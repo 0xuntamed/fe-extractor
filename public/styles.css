@@ -436,17 +436,6 @@ input[type="url"]:focus {
   color: var(--muted);
 }
 
-.warnings ul {
-  margin: 0;
-  padding-left: 20px;
-}
-
-.warnings li {
-  margin-bottom: 8px;
-  color: var(--steel);
-  line-height: 1.5;
-}
-
 .preview-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));

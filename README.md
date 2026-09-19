@@ -112,8 +112,16 @@ The response contains source metadata, summary counts, health scores, detected t
 
 ```text
 .
-├── server.js          # HTTP server, source fetching, and audit logic
-├── package.json       # Project metadata and start script
+├── server.js          # HTTP server, routing, and static file serving
+├── package.json       # Project metadata and scripts
+├── src/
+│   ├── net.js         # Fetching with timeouts, SSRF guard, concurrency pool
+│   ├── extractors.js  # Pure analysis functions (colors, fonts, components…)
+│   ├── github.js      # GitHub repo discovery and fetching
+│   └── live.js        # Live-site HTML and stylesheet fetching
+├── test/
+│   ├── extractors.test.js
+│   └── net.test.js
 └── public/
     ├── index.html     # Application markup
     ├── app.js         # Client-side rendering and exports
@@ -136,6 +144,7 @@ The audit score is an estimate of how much reusable design-system evidence was d
 
 - Only public repositories are supported; private GitHub authentication is not implemented.
 - GitHub API rate limits apply to repository analysis.
+- Live mode refuses URLs that resolve to private, loopback, or link-local addresses (SSRF protection), and each request applies a fetch timeout.
 - Sites that block server-side requests or stylesheet access may return incomplete results.
 - Live mode does not execute client-side JavaScript.
 - Minified, generated, dynamic, or unconventional source can reduce detection accuracy.
@@ -148,6 +157,13 @@ npm start
 ```
 
 Starts the application with `node server.js`.
+
+```bash
+npm test
+```
+
+Runs the unit test suite (`node --test`) covering the extractors and the
+network helpers, including the SSRF guard.
 
 ## License
 
